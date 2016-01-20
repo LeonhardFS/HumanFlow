@@ -1,0 +1,48 @@
+Model description:
+==================
+
+Unweighted:
+---
+
+lr_model_ma_model_v1-final.csv:
+---
+--> adj list: L1/27
+--> 5 min average
+--> unweighted average
+--> 8 rounds
+--> window sizes: [10], [10, 15], [10, 15, 20, 30]
+linear_model.LassoLarsCV(positive=True, max_iter=1500)
+
+
+lr_model_ma_model_v2-final.csv:
+---
+--> adj list: L1/27
+--> 15 min average
+--> unweighted average
+--> 8 rounds
+--> window sizes: [10], [10, 15], [10, 15, 20, 30]
+linear_model.LassoLarsCV(positive=True, max_iter=1500)
+
+
+lr_model_ma_model_v3-final.csv:
+---
+--> adj list: L1/27
+--> 5 min average
+--> unweighted average
+--> 8 rounds
+--> window sizes: [10]
+linear_model.LassoLarsCV(positive=True, max_iter=1500)
+
+
+Weighted:
+----
+
+lr_model_ma_model_weighted_v1-final.csv:
+---
+--> adj list: L1/27
+--> 5 min average
+--> reliability weighted average
+--> 8 rounds
+--> window sizes: [10], [10, 15], [10, 15, 20, 30]
+linear_model.LassoLarsCV(positive=True, max_iter=1500)
+

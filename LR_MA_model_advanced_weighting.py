@@ -86,81 +86,50 @@ def build_weighted_time_table(df_train, num_minutes=5):
 
     return df_day_avg_values
 
-# ### Building a reference table with average daily value of the sensor
-# specify with num_minutes over how many minutes the time should be bucketed
-
-
-def build_avg_time_table(df_train, num_minutes=5):
-
-    # different averaging does not seem to have an effect...
-    df_train['day_time'] = (df_train['time'] % (
-        100 * 100)) // 100 * 100 + ((df_train['time'] % 100) // num_minutes) * num_minutes
-
-    # Initializing the dataframe
-    # Update: rounding the value
-    col_name = 'S1'
-    df_day_avg_values = df_train[[col_name, 'day_time']][
-        df_train[col_name] != -1].groupby('day_time').mean().apply(pd.Series.round)
-
-    col_names = ['S' + str(i) for i in xrange(1, 57)]
-    for col_name in col_names[1:]:
-        df_day_avg_values = df_day_avg_values.join(df_train[[col_name, 'day_time']][
-                                                   df_train[col_name] != -1].groupby('day_time').mean().apply(pd.Series.round))
-
-    return df_day_avg_values
 
 # Args:
-#    window_sizes = list of window_size for the moving sum
+#    window_sizes = list of window_size for the moving sum 
 
-
-def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model, prediction_model, window_sizes=[10], do_rounding=False):
+def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model, prediction_model, window_sizes=[10], do_rounding = False):
     staircaseA_nodes = ['S42', 'S46']
     staircaseB_nodes = ['S34', 'S35']
     staircaseC_nodes = ['S52', 'S53']
-
+    
     # Dataframe to store the model prediction
     df_model_lr = df_model.copy()
 
     # Dataframe storing the moving neighbors values
     window_features = df_model[['time']].copy()
-
+    
     for window_size in window_sizes:
     # Building the moving sum for the features before/after for each neighbor
-        model_curr_before = pd.rolling_sum(df_model.sort_index(
-            ascending=False), window_size + 1) - df_model
-        model_curr_after = pd.rolling_sum(df_model, window_size + 1) - df_model
-        model_curr_before = model_curr_before.rename(
-            columns={col_: col_ + 'before' + str(window_size) for col_ in col_names})
-        model_curr_after = model_curr_after.rename(
-            columns={col_: col_ + 'after' + str(window_size) for col_ in col_names})
-        temp = model_curr_after.join(
-            model_curr_before[[col_ + 'before' + str(window_size) for col_ in col_names]])
+        model_curr_before = pd.rolling_sum(df_model.sort_index(ascending=False), window_size+1) - df_model
+        model_curr_after = pd.rolling_sum(df_model, window_size+1) - df_model
+        model_curr_before = model_curr_before.rename(columns={col_:col_+'before'+str(window_size) for col_ in col_names})
+        model_curr_after = model_curr_after.rename(columns={col_:col_+'after'+str(window_size) for col_ in col_names})
+        temp = model_curr_after.join(model_curr_before[[col_+'before'+str(window_size) for col_ in col_names]])
         window_features = window_features.join(temp, lsuffix='left')
-
+    
     for col in col_names:
         # X will store the features and the outcome Y
         X = df_train.copy()
-        X = X.rename(columns={col: 'Y'})
-        X = pd.merge(X, df_day_avg_values[
-                     [col]], left_on='day_time', right_index=True)
-        X = X.rename(columns={col: col + 'avg'})
+        X = X.rename(columns={col:'Y'})
+        X = pd.merge(X, df_day_avg_values[[col]], left_on='day_time', right_index=True)
+        X = X.rename(columns={col:col+'avg'})
 
-        # Building the neighbors (from adjacency list) with missing values
-        # filled as in model
-        neighbors_col = ['S' + str(n) for n in adjacency_list[int(col[1:])]]
-
+        # Building the neighbors (from adjacency list) with missing values filled as in model
+        neighbors_col = ['S'+str(n) for n in adjacency_list[int(col[1:])]]
+        
         # Name of the retained columns from window_features
         window_features_name = []
         for window_size in window_sizes:
-            window_features_name += [col_ + 'before' + str(window_size) for col_ in neighbors_col] + [
-                                                           col_ + 'after' + str(window_size) for col_ in neighbors_col]
-
+            window_features_name += [col_+'before'+str(window_size) for col_ in neighbors_col] + [col_+'after'+str(window_size) for col_ in neighbors_col]
+        
         X = X[['Y']].join(df_model[neighbors_col])
         X = X.join(window_features[window_features_name])
-        # Removing the first and last element impossible to compute given the
-        # window_size
+        # Removing the first and last element impossible to compute given the window_size
         X = X.sort_index()[max(window_sizes): - max(window_sizes)]
-
+        
         # augment with staircase info
         X['sA'] = (col in staircaseA_nodes) * 1.
         X['sB'] = (col in staircaseB_nodes) * 1.
@@ -173,10 +142,8 @@ def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list,
 
         if len(X_test):
             # Models
-            prediction_model = prediction_model.fit(
-                X_train.drop('Y', axis=1), X_train.Y)
-            col_values.ix[test_indices] = prediction_model.predict(
-                X_test.drop('Y', axis=1))
+            prediction_model = prediction_model.fit(X_train.drop('Y', axis=1), X_train.Y)
+            col_values.ix[test_indices] = prediction_model.predict(X_test.drop('Y', axis=1))
 
             # Filling the result with the current sensor prediction
             if do_rounding:
@@ -188,20 +155,43 @@ def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list,
 
 # main step, build the model
 if __name__ == '__main__':
-    print 'loading data...'
+    print 'loading train data...'
     df_train = load_train_data()
-    print 'loading IDW model...'
-    df_IDWmodel = pd.read_csv('data/IDWmodel_train.csv')
+    if model_mode == 'full':
+        idwmodel_file = 'data-final/IDWmodel-final.csv'
+        submit_file = 'models-final/lr_model_ma_model_weighted_v1-final.csv'
+    else:
+        idwmodel_file = 'data/IDWmodel_train.csv'
+        submit_file = 'models/lr_model_ma_model_weighted_v1.csv'
+
+    print 'running ' + submit_file + ' ...'
+
+    # check if IDW model already exists, if not train it!
+    if not file_exists(idwmodel_file):
+        print 'building IDW model first...'
+        df_IDWmodel = build_IDWmodel()
+    else:
+        print 'loading IDW model...'
+        df_IDWmodel = pd.read_csv(idwmodel_file)
+
+
+    ## tune here maybe...
+
     print 'building time table...'
-    #df_day_avg_values = build_avg_time_table(df_train)
     df_day_avg_values = build_weighted_time_table(df_train)
+
 
     print 'computing adj list...'
     col_names = ['S'+str(i) for i in xrange(1, 57)]
     adjacency_list = compute_adjlist(27)
+
+    ## tune here
+    ## Specify here the classification model
     clf = linear_model.LassoLarsCV(positive=True, max_iter=1500)
 
     print 'computing linear model...'
+
+    ## tune here
     num_rounds = 8
     assert (num_rounds >= 2)
     start = time.time()
@@ -211,15 +201,17 @@ if __name__ == '__main__':
     total_time += cur_time
     print 'round #1 on IDW model, {:.2f}/{:.2f}s ...'.format(cur_time, total_time * num_rounds)
 
+    ## tune here
     # First prediction with small windows (1/4 of the number of rounds)
     # To have good prediction on the first and last rows
     for i in xrange((num_rounds - 2)/4):
-    	start = time.time()
-    	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=[10])
-    	cur_time = time.time() - start
-    	total_time += cur_time
-    	print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+        start = time.time()
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=[10])
+        cur_time = time.time() - start
+        total_time += cur_time
+        print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
+    ## tune here
     # Second prediction with small windows (1/4 of the number of rounds)
     # To have good prediction on the first and last rows
     mid_window_sizes = [10, 15]
@@ -230,6 +222,7 @@ if __name__ == '__main__':
         total_time += cur_time
         print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
+    ## tune here
     # Third prediction with small windows (1/2 of the number of rounds)
     # To have good prediction on the first and last rows
     large_window_sizes = [10, 15, 20, 30]
@@ -248,6 +241,7 @@ if __name__ == '__main__':
     print '--> finished in {:.2f}s'.format(total_time)
 
     print 'writing to file...'
-    create_submission_file(df_model_lr, 'models/lr_model_weighted_v1.csv')
+    create_submission_file(df_model_lr, submit_file)
     print 'done!'
+
 
