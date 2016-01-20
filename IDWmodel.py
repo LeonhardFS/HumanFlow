@@ -97,7 +97,10 @@ def build_IDWmodel():
 	    cum_sum += len(df_train_neighbors_avg[df_train_neighbors_avg[col] == -1])
 	assert(cum_sum < 0.001)
 	print 'writing to file...'
-	create_submission_file(df_train_neighbors_avg, 'models/IDWmodel.csv')
+	if model_mode == 'full':
+		create_submission_file(df_train_neighbors_avg, 'models-final/IDWmodel.csv')
+	else:
+		create_submission_file(df_train_neighbors_avg, 'models/IDWmodel.csv')
 
 	# save model also in data folder
 	if model_mode == 'full':
