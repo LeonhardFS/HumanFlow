@@ -104,7 +104,7 @@ def build_IDWmodel():
 
 	# save model also in data folder
 	if model_mode == 'full':
-		df_train_neighbors_avg.to_csv('data-final/IDWmodel_final.csv', index=False)
+		df_train_neighbors_avg.to_csv('data-final/IDWmodel-final.csv', index=False)
 	else:
 		df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv', index=False)
 	print 'done!'
