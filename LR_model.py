@@ -50,7 +50,7 @@ def lr_prediction(df_train, col_names, df_day_avg_values, adjacency_list, df_mod
             col_values.ix[test_indices] = lr.predict(X_test.drop('Y', axis=1))
 
             # Filling the result with the current sensor prediction
-            df_model_lr[col] = col_values
+            df_model_lr[col] = np.round(col_values)
     return df_model_lr
 
 
