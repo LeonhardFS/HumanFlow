@@ -7,52 +7,30 @@ import pandas as pd
 import time
 from helper import *
 
-
-# functions
-def compute_adjlist(threshold):
-	adjacency_list = {}
-	df_sensors = pd.read_csv('data/sensor-coordinates.txt')
-	df_sensors.columns = ['SID', 'X', 'Y']
-
-	# computing the adjacency list based on distance
-	for key in xrange(56):
-	    node = key + 1
-	    adjacency_list[node] = []
-	    # go through all other nodes, if distance is below threshold, fine!
-	    for other_key in xrange(56):
-	        if other_key == key:
-	            continue
-
-	        a = np.array([df_sensors.loc[key].X, df_sensors.loc[key].Y])
-	        b = np.array([df_sensors.loc[other_key].X, df_sensors.loc[other_key].Y])
-	        dist = np.linalg.norm(a - b, ord=1)
-
-	        if dist < threshold:
-	            adjacency_list[node].append(other_key + 1)
-	            
-	return adjacency_list
-
 # compute weights based on distance
 def compute_invdist_weights(adjacency_list):
-    df_sensors = pd.read_csv('data/sensor-coordinates.txt')
-    df_sensors.columns = ['SID', 'X', 'Y']
+	if model_mode == 'full':
+		df_sensors = pd.read_csv('data/sensor-coordinates.txt')
+	else:
+		df_sensors = pd.read_csv('data-final/sensor-coordinates.txt')
+	df_sensors.columns = ['SID', 'X', 'Y']
 
-    weight_list = {}
-    for key in adjacency_list.keys():
-        weight_list[key] = []
-        b = np.array([df_sensors.loc[key - 1].X, df_sensors.loc[key - 1].Y])
-        for el in adjacency_list[key]:
-            # manhattan distance
-            a = np.array([df_sensors.loc[el - 1].X, df_sensors.loc[el - 1].Y])
-            dist = np.linalg.norm(a - b, ord=1)
+	weight_list = {}
+	for key in adjacency_list.keys():
+	    weight_list[key] = []
+	    b = np.array([df_sensors.loc[key - 1].X, df_sensors.loc[key - 1].Y])
+	    for el in adjacency_list[key]:
+	        # manhattan distance
+	        a = np.array([df_sensors.loc[el - 1].X, df_sensors.loc[el - 1].Y])
+	        dist = np.linalg.norm(a - b, ord=1)
 
-            # inverse distance weighting
-            weight_list[key].append(1.0 / dist)
+	        # inverse distance weighting
+	        weight_list[key].append(1.0 / dist)
 
-        # scale it accordingly
-        weight_list[key] = np.array(weight_list[key])
-        weight_list[key] = weight_list[key] / np.sum(weight_list[key])
-    return weight_list
+	    # scale it accordingly
+	    weight_list[key] = np.array(weight_list[key])
+	    weight_list[key] = weight_list[key] / np.sum(weight_list[key])
+	return weight_list
 
 # Several possibilities to average the result among the neighbors:
 #    - cumulative sum of neighbors (v1)
@@ -122,7 +100,10 @@ def build_IDWmodel():
 	create_submission_file(df_train_neighbors_avg, 'models/IDWmodel.csv')
 
 	# save model also in data folder
-	df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv', index=False)
+	if model_mode == 'full':
+		df_train_neighbors_avg.to_csv('data-final/IDWmodel_final.csv', index=False)
+	else:
+		df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv', index=False)
 	print 'done!'
 
 # main code
