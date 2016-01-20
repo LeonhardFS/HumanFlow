@@ -104,8 +104,8 @@ def IDWmodel(df_train):
 	print '--> finished in {:.2f}s'.format(total_time)
 	return df_train_neighbors_avg
 
-# main code
-if __name__ == "__main__":
+
+def build_IDWmodel():
 	df_train = load_train_data()
 
 	# fit model
@@ -124,3 +124,7 @@ if __name__ == "__main__":
 	# save model also in data folder
 	df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv', index=False)
 	print 'done!'
+
+# main code
+if __name__ == "__main__":
+	build_IDWmodel()
