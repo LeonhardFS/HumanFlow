@@ -122,5 +122,5 @@ if __name__ == "__main__":
 	create_submission_file(df_train_neighbors_avg, 'models/IDWmodel.csv')
 
 	# save model also in data folder
-	df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv')
+	df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv', index=False)
 	print 'done!'
