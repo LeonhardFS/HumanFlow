@@ -99,38 +99,61 @@ def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list,
 
 # main step, build the model
 if __name__ == '__main__':
-	print 'loading data...'
-	df_train = load_train_data()
-	print 'loading IDW model...'
-	df_IDWmodel = pd.read_csv('data/IDWmodel_train.csv')
-	print 'building time table...'
-	df_day_avg_values = build_avg_time_table(df_train)
+    print 'loading train data...'
+    df_train = load_train_data()
+    if model_mode == 'full':
+        idwmodel_file = 'data-final/IDWmodel-final.csv'
+        submit_file = 'models-final/lr_model_ma_model_v1-final.csv'
+    else:
+        idwmodel_file = 'data/IDWmodel_train.csv'
+        submit_file = 'models/lr_model_ma_model_v1.csv'
+
+    # check if IDW model already exists, if not train it!
+    if not file_exists(idwmodel_file):
+        print 'building IDW model first...'
+        df_IDWmodel = build_IDWmodel()
+    else:
+        print 'loading IDW model...'
+        df_IDWmodel = pd.read_csv(idwmodel_file)
 
 
-	print 'computing adj list...'
-	col_names = ['S'+str(i) for i in xrange(1, 57)]
-	adjacency_list = compute_adjlist(27)
-	clf = linear_model.LassoLarsCV(positive=True, max_iter=1500)
+    ## tune here maybe...
 
-	print 'computing linear model...'
-	num_rounds = 8
-	assert (num_rounds >= 2)
-	start = time.time()
-	total_time = 0.
-	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_sizes=[10])
-	cur_time = time.time() - start
-	total_time += cur_time
-	print 'round #1 on IDW model, {:.2f}/{:.2f}s ...'.format(cur_time, total_time * num_rounds)
+    print 'building time table...'
+    df_day_avg_values = build_avg_time_table(df_train)
 
+
+    print 'computing adj list...'
+    col_names = ['S'+str(i) for i in xrange(1, 57)]
+    adjacency_list = compute_adjlist(27)
+
+    ## tune here
+    ## Specify here the classification model
+    clf = linear_model.LassoLarsCV(positive=True, max_iter=1500)
+
+    print 'computing linear model...'
+
+    ## tune here
+    num_rounds = 8
+    assert (num_rounds >= 2)
+    start = time.time()
+    total_time = 0.
+    df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_sizes=[10])
+    cur_time = time.time() - start
+    total_time += cur_time
+    print 'round #1 on IDW model, {:.2f}/{:.2f}s ...'.format(cur_time, total_time * num_rounds)
+
+    ## tune here
     # First prediction with small windows (1/4 of the number of rounds)
     # To have good prediction on the first and last rows
-	for i in xrange((num_rounds - 2)/4):
-		start = time.time()
-		df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=[10])
-		cur_time = time.time() - start
-		total_time += cur_time
-		print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+    for i in xrange((num_rounds - 2)/4):
+    	start = time.time()
+    	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=[10])
+    	cur_time = time.time() - start
+    	total_time += cur_time
+    	print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
+    ## tune here
     # Second prediction with small windows (1/4 of the number of rounds)
     # To have good prediction on the first and last rows
     mid_window_sizes = [10, 15]
@@ -141,6 +164,7 @@ if __name__ == '__main__':
         total_time += cur_time
         print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
+    ## tune here
     # Third prediction with small windows (1/2 of the number of rounds)
     # To have good prediction on the first and last rows
     large_window_sizes = [10, 15, 20, 30]
@@ -150,15 +174,15 @@ if __name__ == '__main__':
         cur_time = time.time() - start
         total_time += cur_time
         print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
-	
-	start = time.time()
-	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes, do_rounding = True)
-	cur_time = time.time() - start
-	total_time += cur_time
-	print 'round #{} with rounding, {:.2f}s ...'.format(3 + num_rounds, cur_time)
-	print '--> finished in {:.2f}s'.format(total_time)
 
-	print 'writing to file...'
-	create_submission_file(df_model_lr, 'models/lr_model_v9.csv')
-	print 'done!'
+    start = time.time()
+    df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes, do_rounding = True)
+    cur_time = time.time() - start
+    total_time += cur_time
+    print 'round #{} with rounding, {:.2f}s ...'.format(3 + num_rounds, cur_time)
+    print '--> finished in {:.2f}s'.format(total_time)
+
+    print 'writing to file...'
+    create_submission_file(df_model_lr, submit_file)
+    print 'done!'
 

@@ -1,0 +1,9 @@
+Model description:
+==================
+
+lr_model_ma_model_v1-final.csv:
+---
+--> unweighted average
+--> 8 rounds
+--> window sizes: [10], [10, 15], [10, 15, 20, 30]
+linear_model.LassoLarsCV(positive=True, max_iter=1500)
