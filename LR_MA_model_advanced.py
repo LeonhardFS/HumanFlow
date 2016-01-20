@@ -103,10 +103,10 @@ if __name__ == '__main__':
     df_train = load_train_data()
     if model_mode == 'full':
         idwmodel_file = 'data-final/IDWmodel-final.csv'
-        submit_file = 'models-final/lr_model_ma_model_v1-final.csv'
+        submit_file = 'models-final/lr_model_ma_model_v2-final.csv'
     else:
         idwmodel_file = 'data/IDWmodel_train.csv'
-        submit_file = 'models/lr_model_ma_model_v1.csv'
+        submit_file = 'models/lr_model_ma_model_v2.csv'
 
     # check if IDW model already exists, if not train it!
     if not file_exists(idwmodel_file):
