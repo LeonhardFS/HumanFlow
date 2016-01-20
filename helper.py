@@ -21,9 +21,9 @@ def timestamptoindex(ts):
 
 # loads train data
 def load_train_data():
-	if model_mode == 'full':
-		df_train = pd.read_csv('data-final/train-final.txt', skipinitialspace=True)
-	else:
+    if model_mode == 'full':
+    	df_train = pd.read_csv('data-final/train-final.txt', skipinitialspace=True)
+    else:
     	df_train = pd.read_csv('data/train.txt', skipinitialspace=True)
     df_train.rename(columns={'Timestamp (DHHMM)':'time'}, inplace=True)
     return df_train
@@ -41,7 +41,7 @@ def get_count(row, train):
 # #### To build a submission file
 def create_submission_file(df, filename):
 
-	if model_mode == 'full':
+    if model_mode == 'full':
     	df_test = pd.read_csv('data-final/test-final.txt', skipinitialspace=True)
     else:
     	df_test = pd.read_csv('data/test.txt', skipinitialspace=True)
@@ -53,8 +53,15 @@ def create_submission_file(df, filename):
     df_test['Index'] = df_test.index + 1
     df_test[['Index', 'Count']].to_csv(filename, index=False)
 
-# Compute the adjacency list with threshold from the dataframe df
-def compute_adjlist(threshold, df):
+# functions
+def compute_adjlist(threshold):
+    adjacency_list = {}
+    if model_mode == 'full':
+        df_sensors = pd.read_csv('data/sensor-coordinates.txt')
+    else:
+        df_sensors = pd.read_csv('data-final/sensor-coordinates.txt')
+    df_sensors.columns = ['SID', 'X', 'Y']
+
     # computing the adjacency list based on distance
     for key in xrange(56):
         node = key + 1
@@ -64,8 +71,8 @@ def compute_adjlist(threshold, df):
             if other_key == key:
                 continue
 
-            a = np.array([df.loc[key].X, df.loc[key].Y])
-            b = np.array([df.loc[other_key].X, df.loc[other_key].Y])
+            a = np.array([df_sensors.loc[key].X, df_sensors.loc[key].Y])
+            b = np.array([df_sensors.loc[other_key].X, df_sensors.loc[other_key].Y])
             dist = np.linalg.norm(a - b, ord=1)
 
             if dist < threshold:
