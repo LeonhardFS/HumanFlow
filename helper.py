@@ -36,3 +36,23 @@ def create_submission_file(df, filename):
     submission_name = 'dummy.csv'
     df_test['Index'] = df_test.index + 1
     df_test[['Index', 'Count']].to_csv(filename, index=False)
+
+
+def compute_adjlist(threshold):
+    # computing the adjacency list based on distance
+    for key in xrange(56):
+        node = key + 1
+        adjacency_list[node] = []
+        # go through all other nodes, if distance is below threshold, fine!
+        for other_key in xrange(56):
+            if other_key == key:
+                continue
+
+            a = np.array([df_sensors.loc[key].X, df_sensors.loc[key].Y])
+            b = np.array([df_sensors.loc[other_key].X, df_sensors.loc[other_key].Y])
+            dist = np.linalg.norm(a - b, ord=1)
+
+            if dist < threshold:
+                adjacency_list[node].append(other_key + 1)
+                
+    return adjacency_list
