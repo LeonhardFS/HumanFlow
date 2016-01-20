@@ -1,5 +1,10 @@
 import numpy as np
 import pandas as pd
+import os
+
+# checks if file exists and is readable
+def file_exists(path):
+    return os.path.isfile(path) and os.access(path, os.R_OK)
 
 # converts time stamp as int in DHHMM into index for the table
 def timestamptoindex(ts):
