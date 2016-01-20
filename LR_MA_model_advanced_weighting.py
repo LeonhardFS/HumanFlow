@@ -164,6 +164,8 @@ if __name__ == '__main__':
         idwmodel_file = 'data/IDWmodel_train.csv'
         submit_file = 'models/lr_model_ma_model_weighted_v1.csv'
 
+    print 'running ' + submit_file + ' ...'
+
     # check if IDW model already exists, if not train it!
     if not file_exists(idwmodel_file):
         print 'building IDW model first...'
