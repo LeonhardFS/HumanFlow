@@ -37,8 +37,8 @@ def create_submission_file(df, filename):
     df_test['Index'] = df_test.index + 1
     df_test[['Index', 'Count']].to_csv(filename, index=False)
 
-
-def compute_adjlist(threshold):
+# Compute the adjacency list with threshold from the dataframe df
+def compute_adjlist(threshold, df):
     # computing the adjacency list based on distance
     for key in xrange(56):
         node = key + 1
@@ -48,8 +48,8 @@ def compute_adjlist(threshold):
             if other_key == key:
                 continue
 
-            a = np.array([df_sensors.loc[key].X, df_sensors.loc[key].Y])
-            b = np.array([df_sensors.loc[other_key].X, df_sensors.loc[other_key].Y])
+            a = np.array([df.loc[key].X, df.loc[key].Y])
+            b = np.array([df.loc[other_key].X, df.loc[other_key].Y])
             dist = np.linalg.norm(a - b, ord=1)
 
             if dist < threshold:
