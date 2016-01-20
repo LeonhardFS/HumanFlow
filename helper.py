@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import os
 
+# model_mode specifying if the full or the train data is used
+model_mode = 'full'
+#model_mode = 'small'
+
 # checks if file exists and is readable
 def file_exists(path):
     return os.path.isfile(path) and os.access(path, os.R_OK)
@@ -17,7 +21,10 @@ def timestamptoindex(ts):
 
 # loads train data
 def load_train_data():
-    df_train = pd.read_csv('data/train.txt', skipinitialspace=True)
+	if model_mode == 'full':
+		df_train = pd.read_csv('data-final/train-final.txt', skipinitialspace=True)
+	else:
+    	df_train = pd.read_csv('data/train.txt', skipinitialspace=True)
     df_train.rename(columns={'Timestamp (DHHMM)':'time'}, inplace=True)
     return df_train
 
@@ -34,7 +41,11 @@ def get_count(row, train):
 # #### To build a submission file
 def create_submission_file(df, filename):
 
-    df_test = pd.read_csv('data/test.txt', skipinitialspace=True)
+	if model_mode == 'full':
+    	df_test = pd.read_csv('data-final/test-final.txt', skipinitialspace=True)
+    else:
+    	df_test = pd.read_csv('data/test.txt', skipinitialspace=True)
+
     df_test['Count'] = df_test.apply(lambda row: get_count(row, df),axis=1)
 
     # Saving it under the name submission_name
