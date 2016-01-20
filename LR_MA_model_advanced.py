@@ -15,7 +15,7 @@ import sklearn
 
 # ### Building a reference table with average daily value of the sensor
 # specify with num_minutes over how many minutes the time should be bucketed
-def build_avg_time_table(df_train, num_minutes=5):
+def build_avg_time_table(df_train, num_minutes=15):
     
     # different averaging does not seem to have an effect...
     df_train['day_time'] = (df_train['time'] % (100 * 100)) // 100 * 100 + ((df_train['time'] % 100) // num_minutes) * num_minutes

@@ -3,6 +3,15 @@ Model description:
 
 lr_model_ma_model_v1-final.csv:
 ---
+--> 5 min average
+--> unweighted average
+--> 8 rounds
+--> window sizes: [10], [10, 15], [10, 15, 20, 30]
+linear_model.LassoLarsCV(positive=True, max_iter=1500)
+
+lr_model_ma_model_v2-final.csv:
+---
+--> 15 min average
 --> unweighted average
 --> 8 rounds
 --> window sizes: [10], [10, 15], [10, 15, 20, 30]
