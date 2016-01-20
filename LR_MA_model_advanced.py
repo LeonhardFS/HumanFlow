@@ -117,7 +117,7 @@ if __name__ == '__main__':
 	assert (num_rounds >= 2)
 	start = time.time()
 	total_time = 0.
-	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_size=[10])
+	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_sizes=[10])
 	cur_time = time.time() - start
 	total_time += cur_time
 	print 'round #1 on IDW model, {:.2f}/{:.2f}s ...'.format(cur_time, total_time * num_rounds)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     # To have good prediction on the first and last rows
 	for i in xrange((num_rounds - 2)/4):
 		start = time.time()
-		df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=[10])
+		df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=[10])
 		cur_time = time.time() - start
 		total_time += cur_time
 		print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     mid_window_sizes = [10, 15]
     for i in xrange((num_rounds - 2)/4):
         start = time.time()
-        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=mid_window_sizes)
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=mid_window_sizes)
         cur_time = time.time() - start
         total_time += cur_time
         print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
@@ -146,13 +146,13 @@ if __name__ == '__main__':
     large_window_sizes = [10, 15, 20, 30]
     for i in xrange((num_rounds - 2)/2):
         start = time.time()
-        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=large_window_sizes)
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes)
         cur_time = time.time() - start
         total_time += cur_time
         print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 	
 	start = time.time()
-	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=large_window_sizes, do_rounding = True)
+	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes, do_rounding = True)
 	cur_time = time.time() - start
 	total_time += cur_time
 	print 'round #{} with rounding, {:.2f}s ...'.format(3 + num_rounds, cur_time)
