@@ -60,7 +60,7 @@ def compute_invdist_weights(adjacency_list):
 #    - average (raw) (v3) 
 #    - average (rounded) (v4)
 #    - average with inv distance weight, larger adj list (raw) (v5 Leo) ** best (27. euclidean)
-def fill_neighbors(row, col_name, adjacency_list):
+def fill_neighbors(row, col_name, adjacency_list, weight_list):
     if row[col_name] == -1:
         new_value = 0.
         count = 0
@@ -82,35 +82,45 @@ def fill_neighbors(row, col_name, adjacency_list):
         return row[col_name]
 
 
+def IDWmodel(df_train):
+	print 'computing adjacency list...'
+	adjacency_list = compute_adjlist(27.) # best model
+
+	print 'computing weights based on distance...'
+	weight_list = compute_invdist_weights(adjacency_list)
+
+	# make prediction
+	print 'starting prediction...'
+	col_names = ['S'+str(i) for i in xrange(1, 57)]
+	df_train_neighbors_avg = df_train.copy()
+	total_time = 0.
+	for col_name in col_names:
+	    start = time.time()
+	    df_train_neighbors_avg[col_name] = df_train.apply(lambda row: fill_neighbors(row, col_name, adjacency_list, weight_list),axis=1)
+	    col_time = time.time() - start
+	    total_time += col_time
+	    print 'Col {} computed in {:.2f}s, total: {:.2f}s'.format(col_name, col_time, total_time)
+
+	print '--> finished in {:.2f}s'.format(total_time)
+	return df_train_neighbors_avg
 
 # main code
-df_train = load_train_data()
-    
-print 'computing adjacency list...'
-adjacency_list = compute_adjlist(27.) # best model
+if __name__ == "__main__":
+	df_train = load_train_data()
 
-print 'computing weights based on distance...'
-weight_list = compute_invdist_weights(adjacency_list)
+	# fit model
+	df_train_neighbors_avg = IDWmodel(df_train)
 
-# make prediction
-print 'starting prediction...'
-col_names = ['S'+str(i) for i in xrange(1, 57)]
-df_train_neighbors_avg = df_train.copy()
-total_time = 0.
-for col_name in col_names:
-    start = time.time()
-    df_train_neighbors_avg[col_name] = df_train.apply(lambda row: fill_neighbors(row, col_name, adjacency_list),axis=1)
-    col_time = time.time() - start
-    total_time += col_time
-    print 'Col {} computed in {:.2f}s, total: {:.2f}s'.format(col_name, col_time, total_time)
+	print 'performing check...'
+	# Checking that all the values are filled (i.e no -1 left)
+	cum_sum = 0
+	col_names = ['S'+str(i) for i in xrange(1, 57)]
+	for col in col_names:
+	    cum_sum += len(df_train_neighbors_avg[df_train_neighbors_avg[col] == -1])
+	assert(cum_sum < 0.001)
+	print 'writing to file...'
+	create_submission_file(df_train_neighbors_avg, 'models/IDWmodel.csv')
 
-print '--> finished in {:.2f}s'.format(total_time)
-print 'performing check...'
-# Checking that all the values are filled (i.e no -1 left)
-cum_sum = 0
-for col in col_names:
-    cum_sum += len(df_train_neighbors_avg[df_train_neighbors_avg[col] == -1])
-assert(cum_sum < 0.001)
-print 'writing to file...'
-create_submission_file(df_train_neighbors_avg, 'models/IDWmodel.csv')
-print 'done!'
+	# save model also in data folder
+	df_train_neighbors_avg.to_csv('data/IDWmodel_train.csv')
+	print 'done!'
