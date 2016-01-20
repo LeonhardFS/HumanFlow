@@ -1,0 +1,6 @@
+- threshold for adj list
+- maxiterations /  positive for lasso regressor 
+- change linear model (i.e. lasso)
+- number of rounds of calling the model recursively
+- windows size for moving average
+- number of minutes for time bucketing
