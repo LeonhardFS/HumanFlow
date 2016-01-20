@@ -31,20 +31,28 @@ def build_avg_time_table(df_train, num_minutes=5):
         
     return df_day_avg_values
 
-def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model, prediction_model, window_size=10, do_rounding = False):
+# Args:
+#    window_sizes = list of window_size for the moving sum 
+
+def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model, prediction_model, window_sizes=[10], do_rounding = False):
     staircaseA_nodes = ['S42', 'S46']
     staircaseB_nodes = ['S34', 'S35']
     staircaseC_nodes = ['S52', 'S53']
     
     # Dataframe to store the model prediction
     df_model_lr = df_model.copy()
+
+    # Dataframe storing the moving neighbors values
+    window_features = df_model[['time']].copy()
     
+    for window_size in window_sizes:
     # Building the moving sum for the features before/after for each neighbor
-    model_curr_before = pd.rolling_sum(df_model.sort(ascending=False), window_size+1) - df_model
-    model_curr_after = pd.rolling_sum(df_model, window_size+1) - df_model
-    model_curr_before = model_curr_before.rename(columns={col:col+'before' for col in col_names})
-    model_curr_after = model_curr_after.rename(columns={col:col+'after' for col in col_names})
-    window_features = model_curr_after.join(model_curr_before[[col_+'before' for col_ in col_names]])
+        model_curr_before = pd.rolling_sum(df_model.sort_index(ascending=False), window_size+1) - df_model
+        model_curr_after = pd.rolling_sum(df_model, window_size+1) - df_model
+        model_curr_before = model_curr_before.rename(columns={col_:col_+'before'+str(window_size) for col_ in col_names})
+        model_curr_after = model_curr_after.rename(columns={col_:col_+'after'+str(window_size) for col_ in col_names})
+        temp = model_curr_after.join(model_curr_before[[col_+'before'+str(window_size) for col_ in col_names]])
+        window_features = window_features.join(temp, lsuffix='left')
     
     for col in col_names:
         # X will store the features and the outcome Y
@@ -56,10 +64,15 @@ def prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list,
         # Building the neighbors (from adjacency list) with missing values filled as in model
         neighbors_col = ['S'+str(n) for n in adjacency_list[int(col[1:])]]
         
+        # Name of the retained columns from window_features
+        window_features_name = []
+        for window_size in window_sizes:
+            window_features_name += [col_+'before'+str(window_size) for col_ in neighbors_col] + [col_+'after'+str(window_size) for col_ in neighbors_col]
+        
         X = X[['Y']].join(df_model[neighbors_col])
-        X = X.join(window_features[[col_+'before' for col_ in neighbors_col] + [col_+'after' for col_ in neighbors_col]])
+        X = X.join(window_features[window_features_name])
         # Removing the first and last element impossible to compute given the window_size
-        X = X.sort()[window_size: - window_size]
+        X = X.sort_index()[max(window_sizes): - max(window_sizes)]
         
         # augment with staircase info
         X['sA'] = (col in staircaseA_nodes) * 1.
@@ -104,20 +117,42 @@ if __name__ == '__main__':
 	assert (num_rounds >= 2)
 	start = time.time()
 	total_time = 0.
-	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_size=10)
+	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_size=[10])
 	cur_time = time.time() - start
 	total_time += cur_time
 	print 'round #1 on IDW model, {:.2f}/{:.2f}s ...'.format(cur_time, total_time * num_rounds)
 
-	for i in xrange(num_rounds - 2):
+    # First prediction with small windows (1/4 of the number of rounds)
+    # To have good prediction on the first and last rows
+	for i in xrange((num_rounds - 2)/4):
 		start = time.time()
-		df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=10)
+		df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=[10])
 		cur_time = time.time() - start
 		total_time += cur_time
 		print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+
+    # Second prediction with small windows (1/4 of the number of rounds)
+    # To have good prediction on the first and last rows
+    mid_window_sizes = [10, 15]
+    for i in xrange((num_rounds - 2)/4):
+        start = time.time()
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=mid_window_sizes)
+        cur_time = time.time() - start
+        total_time += cur_time
+        print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+
+    # Third prediction with small windows (1/2 of the number of rounds)
+    # To have good prediction on the first and last rows
+    large_window_sizes = [10, 15, 20, 30]
+    for i in xrange((num_rounds - 2)/2):
+        start = time.time()
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=large_window_sizes)
+        cur_time = time.time() - start
+        total_time += cur_time
+        print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 	
 	start = time.time()
-	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=10, do_rounding = True)
+	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=large_window_sizes, do_rounding = True)
 	cur_time = time.time() - start
 	total_time += cur_time
 	print 'round #{} with rounding, {:.2f}s ...'.format(3 + num_rounds, cur_time)
