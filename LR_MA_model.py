@@ -96,19 +96,34 @@ if __name__ == '__main__':
 
 	print 'computing adj list...'
 	col_names = ['S'+str(i) for i in xrange(1, 57)]
-	adjacency_list = compute_adjlist(27.)
+	adjacency_list = compute_adjlist(27)
 	clf = linear_model.LassoLarsCV(positive=True, max_iter=1500)
 
-	print 'round #1 on IDW model...'
-	num_rounds = 5
+	print 'computing linear model...'
+	num_rounds = 8
+	assert (num_rounds >= 2)
+	start = time.time()
+	total_time = 0.
 	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_IDWmodel, clf, window_size=10)
-	for i in xrange(num_rounds):
-		print 'round #{}...'.format(i+2)
+	cur_time = time.time() - start
+	total_time += cur_time
+	print 'round #1 on IDW model, {:.2f}/{:.2f}s ...'.format(cur_time, total_time * num_rounds)
+
+	for i in xrange(num_rounds - 2):
+		start = time.time()
 		df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=10)
-	print 'round #{} with rounding...'.format(3 + num_rounds)
+		cur_time = time.time() - start
+		total_time += cur_time
+		print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+	
+	start = time.time()
 	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_size=10, do_rounding = True)
+	cur_time = time.time() - start
+	total_time += cur_time
+	print 'round #{} with rounding, {:.2f}s ...'.format(3 + num_rounds, cur_time)
+	print '--> finished in {:.2f}s'.format(total_time)
 
 	print 'writing to file...'
-	create_submission_file(df_model_lr, 'models/lr_model_v8.csv')
+	create_submission_file(df_model_lr, 'models/lr_model_v9.csv')
 	print 'done!'
 
