@@ -103,12 +103,10 @@ if __name__ == '__main__':
     df_train = load_train_data()
     if model_mode == 'full':
         idwmodel_file = 'data-final/IDWmodel-final.csv'
-        submit_file = 'models-final/lr_model_ma_model_v3-final.csv'
+        submit_file = 'models-final/lr_model_ma_model_v2-final.csv'
     else:
         idwmodel_file = 'data/IDWmodel_train.csv'
-        submit_file = 'models/lr_model_ma_model_v3.csv'
-
-    print 'running ' + submit_file + ' ...'
+        submit_file = 'models/lr_model_ma_model_v2.csv'
 
     # check if IDW model already exists, if not train it!
     if not file_exists(idwmodel_file):
@@ -148,35 +146,34 @@ if __name__ == '__main__':
     ## tune here
     # First prediction with small windows (1/4 of the number of rounds)
     # To have good prediction on the first and last rows
-    # for i in xrange((num_rounds - 2)/4):
-    for i in xrange(num_rounds - 2):
+    for i in xrange((num_rounds - 2)/4):
     	start = time.time()
     	df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=[10])
     	cur_time = time.time() - start
     	total_time += cur_time
     	print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
-    # ## tune here
-    # # Second prediction with small windows (1/4 of the number of rounds)
-    # # To have good prediction on the first and last rows
-    # mid_window_sizes = [10, 15]
-    # for i in xrange((num_rounds - 2)/4):
-    #     start = time.time()
-    #     df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=mid_window_sizes)
-    #     cur_time = time.time() - start
-    #     total_time += cur_time
-    #     print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+    ## tune here
+    # Second prediction with small windows (1/4 of the number of rounds)
+    # To have good prediction on the first and last rows
+    mid_window_sizes = [10, 15]
+    for i in xrange((num_rounds - 2)/4):
+        start = time.time()
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=mid_window_sizes)
+        cur_time = time.time() - start
+        total_time += cur_time
+        print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
-    # ## tune here
-    # # Third prediction with small windows (1/2 of the number of rounds)
-    # # To have good prediction on the first and last rows
-    # large_window_sizes = [10, 15, 20, 30]
-    # for i in xrange((num_rounds - 2)/2):
-    #     start = time.time()
-    #     df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes)
-    #     cur_time = time.time() - start
-    #     total_time += cur_time
-    #     print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
+    ## tune here
+    # Third prediction with small windows (1/2 of the number of rounds)
+    # To have good prediction on the first and last rows
+    large_window_sizes = [10, 15, 20, 30]
+    for i in xrange((num_rounds - 2)/2):
+        start = time.time()
+        df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes)
+        cur_time = time.time() - start
+        total_time += cur_time
+        print 'round #{}, {:.2f}/{:.2f}s ...'.format(i+2, cur_time, total_time  * num_rounds / (i + 2) )
 
     start = time.time()
     df_model_lr = prediction_augmented(df_train, col_names, df_day_avg_values, adjacency_list, df_model_lr, clf, window_sizes=large_window_sizes, do_rounding = True)
